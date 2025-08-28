@@ -31,6 +31,52 @@ app.get("/tareas", (req, res) => {
   res.json(tareas);
 });
 
+app.get("/tareas/estadisticas", (req, res) => {
+  try {
+    const total = tareas.length;
+    
+    
+    const tareaMasReciente = tareas.length > 0
+      ? tareas.reduce((reciente, actual) =>
+          actual.fechaCreacion > reciente.fechaCreacion ? actual : reciente
+        )
+      : null;
+
+
+    const tareaMasAntigua = tareas.length > 0
+      ? tareas.reduce((antigua, actual) =>
+          actual.fechaCreacion < antigua.fechaCreacion ? actual : antigua
+        )
+      : null;
+    
+    const tareasCompletadas = tareas.filter(t => t.completada).length;
+    const tareasPendientes = tareas.filter(t => !t.completada).length;
+    
+    res.json({
+      total,
+      tareaMasReciente: tareaMasReciente ? {
+        id: tareaMasReciente.id,  
+        titulo: tareaMasReciente.titulo,
+        fechaCreacion: tareaMasReciente.fechaCreacion
+      } : null,
+      tareaMasAntigua: tareaMasAntigua ? {
+        id: tareaMasAntigua.id,  
+        titulo: tareaMasAntigua.titulo,
+        fechaCreacion: tareaMasAntigua.fechaCreacion
+      } : null,
+      tareasCompletadas,
+      tareasPendientes,
+      porcentajeCompletadas: total > 0 ? ((tareasCompletadas / total) * 100).toFixed(2) + '%' : '0%'
+    });
+
+  } catch (error) {
+    res.status(500).json({ 
+      mensaje: "Error al calcular estadísticas",
+      error: error.message 
+    });
+  }
+});
+
 app.get("/tareas/:id", (req, res) => {
   const id = parseInt(req.params.id);
   const tarea = tareas.find(t => t.id === id);
@@ -66,6 +112,8 @@ app.delete("/tareas/:id", (req, res) => {
     res.status(404).json({ mensaje: "Tarea no encontrada" });
   }
 });
+
+
 
 
 app.listen(PORT, () => {
